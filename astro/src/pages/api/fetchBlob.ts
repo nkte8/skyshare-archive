@@ -10,6 +10,6 @@ export const GET: APIRoute = async (req: APIContext) => {
     const res = new Response(blob);
     return res;
   } catch (error) {
-    return new Response("Error fetching HTML", { status: 500 });
+    return new Response("Error fetching Blob", { status: 500 });
   }
 };
