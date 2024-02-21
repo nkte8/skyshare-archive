@@ -2,9 +2,9 @@ import { Fragment, Dispatch, SetStateAction, useContext, useEffect, useState } f
 import { type popupContent, type msgInfo } from "../common/types"
 import { Profile_context } from "../common/contexts"
 import ShareButton from "./ShareButton"
-import getOgp from "../../../utils/getOgp"
+import { getOgpV2 } from "../../../utils/getOgp"
 import Tweetbox from "../common/Tweetbox"
-import getMeta, { ogpMeta } from "@/utils/getMeta"
+import { ogpMeta } from "@/utils/getMeta"
 import { readShowTaittsuu } from "@/utils/localstorage"
 
 export const Component = ({
@@ -24,8 +24,9 @@ export const Component = ({
                     `/api/fetchHTML?url=${popupContent.url}`
                 ).then((text) => text.text()
                 ).catch()
-                const url = getOgp({ content: html })
-                const meta = getMeta({ content: html })
+                const ogp = await getOgpV2(html)
+                const url = ogp.imageUrl
+                const meta = {title: ogp.title, description: ogp.description}
                 setOgpUrl(url)
                 setOgpMeta(meta)
             } catch (error: unknown) {
