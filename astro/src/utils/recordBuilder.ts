@@ -6,8 +6,7 @@ import uploadBlob from "./atproto_api/uploadBlob";
 import model_uploadBlob from "./atproto_api/models/uploadBlob.json";
 import model_error from "./atproto_api/models/error.json";
 
-import getOgp from "./getOgp"
-import getMeta, { ogpMeta } from "./getMeta"
+import { getOgpV2 } from "./getOgp"
 
 export type SessionNecessary = {
     did: string,
@@ -62,15 +61,18 @@ export const attachExternalToRecord = async ({
     let blob: Blob | null = null
 
     try {
-        html = await fetch(externalUrl).then((text) => text.text())
+        html = await fetch(
+            `/api/fetchHTML?url=${externalUrl.toString()}`
+        ).then((text) => text.text())
         if (html !== null) {
-            ogpUrl = getOgp({ content: html })
-            ogpMeta = getMeta({ content: html })
             handleProcessing({
                 msg: `${externalUrl.hostname}からOGPの取得中...`,
                 isError: false
             })
-            blob = await fetch(ogpUrl).then(res => res.blob())
+            const ogp = await getOgpV2(html)
+            ogpUrl = ogp.imageUrl
+            ogpMeta = { title: ogp.title, description: ogp.description }
+            blob = ogp.blob
         }
     } catch (error: unknown) {
         // failed to fetchの場合、リンクカードを付与しない。

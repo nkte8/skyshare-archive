@@ -21,7 +21,7 @@ export const Component = ({
         if (popupContent.url !== null) {
             try {
                 let html = await fetch(
-                    popupContent.url
+                    `/api/fetchHTML?url=${popupContent.url}`
                 ).then((text) => text.text()
                 ).catch()
                 const url = getOgp({ content: html })
