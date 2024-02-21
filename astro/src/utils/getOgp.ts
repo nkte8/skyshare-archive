@@ -56,7 +56,7 @@ export const getOgpV2 = async (
     const title = ogp.title;
     const description = ogp.description;
     const imageUrl = ogp.image;
-    const blob = await fetch(`/api/fetchBlob?url=${ogp.image}`).then((res) =>
+    const blob = await fetch(`/api/fetchBlob?url=${imageUrl}`).then((res) =>
         res.blob()
     );
 
