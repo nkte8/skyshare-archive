@@ -27,8 +27,8 @@ import ForceIntentToggle from "./options/ForceIntentToggle"
 import PostButton from "./PostButton"
 import LanguageSelect from "./LanguageSelect"
 import Details from "./Details"
+import { siteurl } from "@/utils/envs";
 
-const siteurl = location.origin
 const MemoImgViewBox = memo(ImgViewBox)
 const Component = ({
     setMsgInfo,
@@ -186,7 +186,7 @@ const Component = ({
                     isError: false
                 })
                 const [id, rkey] = get_res.uri.split("/")
-                const ogpUrl = new URL(`${pagesPrefix}/${id}@${rkey}/`, siteurl)
+                const ogpUrl = new URL(`${pagesPrefix}/${id}@${rkey}/`, siteurl())
                 popupContent.url = ogpUrl
                 popupContent.content += `${popupContent.content !== "" ? ("\n") : ("")}${ogpUrl.toString()}`
             }

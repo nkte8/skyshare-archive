@@ -5,8 +5,9 @@ import embed from "./atproto_api/embeds"
 import uploadBlob from "./atproto_api/uploadBlob";
 import model_uploadBlob from "./atproto_api/models/uploadBlob.json";
 import model_error from "./atproto_api/models/error.json";
-
-import { getOgpV2 } from "./getOgp"
+import type { ogpMataData, errorResponse } from "@/pages/api/types";
+import { getOgpMeta, getOgpBlob } from "./getOgp"
+import { siteurl } from "./envs";
 
 export type SessionNecessary = {
     did: string,
@@ -53,34 +54,37 @@ export const attachExternalToRecord = async ({
     }) => void
 }): Promise<RecordCore> => {
     let recordResult: RecordCore = base
-    let html: string | null = null
-    let ogpUrl: string | null = null
-    let ogpMeta: ogpMeta = {
+    let ogpMeta: ogpMataData | errorResponse = {
         title: "",
-        description: ""
+        description: "",
+        image: "",
+        type: "meta"
     }
     let blob: Blob | null = null
-
     try {
-        html = await fetch(
-            `/api/fetchHTML?url=${externalUrl.toString()}`
-        ).then((text) => text.text())
-        if (html !== null) {
-            handleProcessing({
-                msg: `${externalUrl.hostname}からOGPの取得中...`,
-                isError: false
-            })
-            const ogp = await getOgpV2(html)
-            ogpUrl = ogp.imageUrl
-            ogpMeta = { title: ogp.title, description: ogp.description }
-            blob = ogp.blob
+        handleProcessing({
+            msg: `${externalUrl.hostname}からOGPの取得中...`,
+            isError: false
+        })
+        const ogpMeta = await getOgpMeta(siteurl(), externalUrl.toString())
+        if (ogpMeta.type === "error") {
+            let e: Error = new Error(ogpMeta.message)
+            e.name = ogpMeta.error
+            throw e
+        }
+        if (ogpMeta.image !== null) {
+            blob = await getOgpBlob(siteurl(), ogpMeta.image)
         }
     } catch (error: unknown) {
-        // failed to fetchの場合、リンクカードを付与しない。
+        let msg: string = "Unexpected Unknown Error"
+        if (error instanceof Error) {
+            msg = error.name + ": " + error.message
+        }
         handleProcessing({
-            msg: `OGPカードの取得に失敗しました。`,
+            msg: msg,
             isError: true
         })
+        blob = null
     }
     if (blob !== null) {
         // リンク先のOGPからblobを作成し、mimeTypeの設定&バイナリのアップロードを実施
@@ -99,7 +103,6 @@ export const attachExternalToRecord = async ({
             e.name = resultUploadBlobs.error
             throw e
         }
-
         // embedを追加
         let embed: embed.external = {
             $type: "app.bsky.embed.external",
@@ -149,11 +152,11 @@ export const attachImageToRecord = async ({
         isError: false
     })
     // 戻り配列の順序を固定
-    const resultUploadBlobs = 
+    const resultUploadBlobs =
         await Promise.all(queUploadBlob).then(
-        (values) => {
-            return values
-        })
+            (values) => {
+                return values
+            })
 
     // 画像アップロードに失敗したファイルが一つでも存在した場合停止する
     resultUploadBlobs.forEach((value) => {

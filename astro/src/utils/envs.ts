@@ -1,5 +1,11 @@
 export const baseurl = import.meta.env.BASE_URL
-export const siteurl = import.meta.env.SITE
+export const siteurl = () => {
+    const env = String(import.meta.env.PUBLIC_STAGING_SITE_URL)
+    if (typeof env !== "undefined" && env !== "") {
+        return env
+    }
+    return import.meta.env.SITE
+}
 export const posturl = baseurl + "app/"
 export const abouturl = baseurl + "about/"
 export const qaurl = baseurl + "qa/"
