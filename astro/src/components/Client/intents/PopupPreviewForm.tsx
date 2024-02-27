@@ -4,7 +4,7 @@ import { Profile_context } from "../common/contexts"
 import ShareButton from "./ShareButton"
 import { getOgpMeta } from "../../../utils/getOgp"
 import Tweetbox from "../common/Tweetbox"
-import { ogpMataData } from "@/pages/api/types"
+import { ogpMataData } from "@/lib/types"
 import { readShowTaittsuu } from "@/utils/localstorage"
 import { siteurl } from "@/utils/envs"
 

@@ -5,7 +5,7 @@ import embed from "./atproto_api/embeds"
 import uploadBlob from "./atproto_api/uploadBlob";
 import model_uploadBlob from "./atproto_api/models/uploadBlob.json";
 import model_error from "./atproto_api/models/error.json";
-import type { ogpMataData, errorResponse } from "@/pages/api/types";
+import type { ogpMataData, errorResponse } from "@/lib/types";
 import { getOgpMeta, getOgpBlob } from "./getOgp"
 import { siteurl } from "./envs";
 
@@ -66,14 +66,46 @@ export const attachExternalToRecord = async ({
             msg: `${externalUrl.hostname}からOGPの取得中...`,
             isError: false
         })
-        const ogpMeta = await getOgpMeta(siteurl(), externalUrl.toString())
+        ogpMeta = await getOgpMeta(siteurl(), externalUrl.toString())
         if (ogpMeta.type === "error") {
             let e: Error = new Error(ogpMeta.message)
             e.name = ogpMeta.error
             throw e
         }
-        if (ogpMeta.image !== null) {
+        if (ogpMeta.image !== "") {
             blob = await getOgpBlob(siteurl(), ogpMeta.image)
+        }
+        let embed: embed.external = {
+            $type: "app.bsky.embed.external",
+            external: {
+                uri: externalUrl.toString(),
+                title: ogpMeta.title,
+                description: ogpMeta.description,
+            }
+        }
+        if (blob !== null) {
+            // リンク先のOGPからblobを作成し、mimeTypeの設定&バイナリのアップロードを実施
+            handleProcessing({
+                msg: `画像のアップロード中...`,
+                isError: false
+            })
+            const resultUploadBlobs = await uploadBlob({
+                accessJwt: session.accessJwt,
+                mimeType: blob.type,
+                blob: new Uint8Array(await blob.arrayBuffer())
+            })
+            // 例外処理
+            if (typeof resultUploadBlobs?.error !== "undefined") {
+                let e: Error = new Error(resultUploadBlobs.message)
+                e.name = resultUploadBlobs.error
+                throw e
+            }
+            // embedを追加
+            embed.external.thumb = resultUploadBlobs.blob
+        }
+        recordResult = {
+            ...base,
+            embed
         }
     } catch (error: unknown) {
         let msg: string = "Unexpected Unknown Error"
@@ -85,38 +117,6 @@ export const attachExternalToRecord = async ({
             isError: true
         })
         blob = null
-    }
-    if (blob !== null) {
-        // リンク先のOGPからblobを作成し、mimeTypeの設定&バイナリのアップロードを実施
-        handleProcessing({
-            msg: `画像のアップロード中...`,
-            isError: false
-        })
-        const resultUploadBlobs = await uploadBlob({
-            accessJwt: session.accessJwt,
-            mimeType: blob.type,
-            blob: new Uint8Array(await blob.arrayBuffer())
-        })
-        // 例外処理
-        if (typeof resultUploadBlobs?.error !== "undefined") {
-            let e: Error = new Error(resultUploadBlobs.message)
-            e.name = resultUploadBlobs.error
-            throw e
-        }
-        // embedを追加
-        let embed: embed.external = {
-            $type: "app.bsky.embed.external",
-            external: {
-                uri: externalUrl.toString(),
-                title: ogpMeta.title,
-                description: ogpMeta.description,
-                thumb: resultUploadBlobs.blob,
-            }
-        }
-        recordResult = {
-            ...base,
-            embed
-        }
     }
     return recordResult
 }

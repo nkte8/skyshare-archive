@@ -1,83 +1,66 @@
 import type { APIContext, APIRoute } from "astro";
-import type { ogpMataData, errorResponse } from "./types";
-import validateRequestReturnURL from "./validateRequest"
+import type { ogpMataData, errorResponse } from "@/lib/types";
 import { siteurl } from "@/utils/envs";
-import { JSDOM } from "jsdom"
+import validateRequestReturnURL from "@/lib/validateRequest"
+// SSRを有効化
+export const prerender = false;
 
-const extractHead = (html: string): ogpMataData | errorResponse => {
-    // セキュリティを考えるならいっそDOMParserで解析済みのresposeを返した方がいい気がする。
-    try {
-        const dom = new JSDOM(html);
-        let ogp: ogpMataData = { title: "", image: "", description: "", type: "meta" }
+// Cloudflare環境 ≠ Nodejsであるため、jsdomやhappy-domが使えなかった
+// 正規表現芸人をせざるをえない...
+const extractHead = (html: string): ogpMataData => {
+    let metas: Array<string> = []
 
-        // 情報取得方法に優先度が存在するため、順に処理を行う
-        const header = dom.window.document.head.children
-        ogp = Array.from(header).reduce<ogpMataData>(
-            (res, elem) => {
-                const name = elem.getAttribute("name");
-                if (ogp.title === "" && name === "twitter:title") {
-                    res.title = elem.getAttribute("content") ?? "";
-                }
-                if (ogp.image === "" && name === "twitter:image") {
-                    res.image = elem.getAttribute("content") ?? "";
-                }
-                if (ogp.description === "" && name === "twitter:description") {
-                    res.description = elem.getAttribute("content") ?? "";
-                }
-                return res;
-            },
-            { title: ogp.title, image: ogp.image, description: ogp.description, type: "meta" }
-        );
-        // twitterカードの情報が欠けていた場合はog情報を参照する
-        if (ogp.title === "" || ogp.description === "" || ogp.image === null) {
-            ogp = Array.from(header).reduce<ogpMataData>(
-                (res, elem) => {
-                    const prop = elem.getAttribute("property");
-                    if (ogp.title === "" && prop === "og:title") {
-                        res.title = elem.getAttribute("content") ?? "";
-                    }
-                    if (ogp.image === "" && prop === "og:image") {
-                        res.image = elem.getAttribute("content") ?? "";
-                    }
-                    if (ogp.description === "" && prop === "og:description") {
-                        res.description = elem.getAttribute("content") ?? "";
-                    }
-                    return res;
-                },
-                { title: ogp.title, image: ogp.image, description: ogp.description, type: "meta" }
-            );
+    const titleFilter: Array<RegExp> = [
+        /(?: *< *meta +name=["']?twitter:title["']? +content=)["']?([^"']*)["']?/,
+        /(?: *< *meta +property=["']?og:title["']? +content=)["']?([^"']*)["']?/,
+    ]
+    const descriptionFilter: Array<RegExp> = [
+        /(?: *< *meta +name=["']?twitter:description["']? +content=)["']?([^"']*)["']?/,
+        /(?: *< *meta +property=["']?og:description["']? +content=)["']?([^"']*)["']?/,
+    ]
+    const imageFilter: Array<RegExp> = [
+        /(?: *< *meta +name=["']?twitter:image["']? +content=)["']?([^"']*)["']?/,
+        /(?: *< *meta +property=["']?og:image["']? +content=)["']?([^"']*)["']?/
+    ]
+    // やるとしたらこの部分の効率化がしたい
+    // ただし、twitter:XXX系→og:XXX系の順序性は崩したくない
+    for (let filters of [titleFilter, descriptionFilter, imageFilter]) {
+        let result: string = ""
+        for (let filter of filters) {
+            const regResult = filter.exec(html)
+            if (regResult !== null) {
+                result = regResult[1]
+                break
+            }
         }
-        return ogp
-    } catch (e: unknown) {
-        let [name, msg]: string = "Unexpected Error"
-        if (e instanceof Error) {
-            name = e.name
-            msg = e.message
-        }
-        return {
-            type: "error",
-            error: name,
-            message: msg
-        }
+        metas.push(result)
+    }
+    return {
+        type: "meta",
+        title: metas[0],
+        description: metas[1],
+        image: metas[2]
     }
 };
 
-export const GET: APIRoute = async (req: APIContext): Promise<Response> => {
-    // CORSの設定（同一 Originなら不要）
-    const corsHeaders = {
+export const GET: APIRoute = async ({ request }: APIContext): Promise<Response> => {
+    // 返却するするヘッダ
+    const Headers = {
         "Access-Control-Allow-Origin": siteurl(),
         "Access-Control-Allow-Methods": "GET,OPTIONS",
-        "Access-Control-Allow-Headers": "Content-Type"
+        "Content-Type": "application/json"
     }
     // APIの事前処理実施
-    const validateResult = validateRequestReturnURL({ req })
+    const validateResult = validateRequestReturnURL({ request })
+
     if (typeof validateResult !== "string") {
-        for (const [key, value] of Object.entries(corsHeaders)) {
+        for (const [key, value] of Object.entries(Headers)) {
             validateResult.headers.append(key, value)
         }
+        validateResult.headers.append("Content-Type", "application/json")
         return validateResult
     }
-    const url = validateResult
+    const url = decodeURIComponent(validateResult)
 
     try {
         const html = await fetch(
@@ -87,17 +70,12 @@ export const GET: APIRoute = async (req: APIContext): Promise<Response> => {
             e.name = res.name
             throw e
         })
-        const meta: ogpMataData | errorResponse = extractHead(html);
-        if (meta.type === "error") {
-            let e: Error = new Error(meta.message)
-            e.name = meta.error
-            throw e
-        }
+        const meta: ogpMataData = extractHead(html);
         const response = new Response(
             JSON.stringify(meta),
             {
                 status: 200,
-                // headers: corsHeaders
+                headers: Headers
             })
         return response
     } catch (error: unknown) {
@@ -112,7 +90,7 @@ export const GET: APIRoute = async (req: APIContext): Promise<Response> => {
             message: msg
         }), {
             status: 500,
-            headers: corsHeaders
+            headers: Headers
         })
     }
 };

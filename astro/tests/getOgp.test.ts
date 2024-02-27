@@ -1,6 +1,6 @@
 import { describe, test, expect } from "@jest/globals";
 import { getOgpMeta } from "../src/utils/getOgp"
-import type { ogpMataData, errorResponse } from "../src/pages/api/types";
+import type { ogpMataData, errorResponse } from "../src/lib/types";
 
 const version = `v${process.env.PUBLIC_VERSION}`
 const siteurl = "http://192.168.3.200:4321"

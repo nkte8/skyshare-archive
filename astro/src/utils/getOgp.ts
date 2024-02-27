@@ -1,4 +1,4 @@
-import type { ogpMataData, errorResponse } from "@/pages/api/types";
+import type { ogpMataData, errorResponse } from "@/lib/types";
 
 // note: エラー規格を型定義として決めた方がいい（ error@Component: message　とするなど）
 export const getOgpMeta = async (

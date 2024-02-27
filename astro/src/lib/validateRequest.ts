@@ -1,25 +1,24 @@
-import { APIContext } from "astro"
 import createErrResponse from "./createErrResponse";
 
 const validateRequestReturnURL = ({
-    req
+    request
 }: {
-    req: APIContext
+    request: Request
 }) => {
-    if (req.request.method === "OPTIONS") {
+    if (request.method === "OPTIONS") {
         return new Response(null, {
             status: 204,
             // headers: corsHeaders
         })
     }
     // GET以外はerror型で返却する
-    if (req.request.method !== "GET") {
+    if (request.method !== "GET") {
         return createErrResponse({
             statusCode: 405
         })
     }
-    const url = req.url.searchParams.get("url");
-    if (!url) {
+    const url = new URL(request.url).searchParams.get("url");
+    if (url === null) {
         return createErrResponse({
             statusCode: 406
         })
