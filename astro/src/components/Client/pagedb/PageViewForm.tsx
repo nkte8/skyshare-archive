@@ -1,12 +1,12 @@
 import { useEffect, useContext, useState, ReactNode, Dispatch, SetStateAction } from "react"
 import { pagesPrefix } from "@/utils/vars"
-import { siteurl } from "@/utils/envs"
 import getIds from "@/utils/backend_api/geIds"
 import { Session_context } from "../common/contexts"
 import { load_circle, link } from "../common/tailwind_variants"
 import ProfileCard from "../bsky/ProfileCard"
 import { type msgInfo } from "../common/types"
 
+const siteurl = location.origin
 const Component = ({
     setMsgInfo
 }: {
@@ -53,7 +53,7 @@ const Component = ({
                                 <div className=" bg-white rounded-lg px-2 py-1 m-1 border-2">
                                     <a className={link()} target="_blank"
                                         href={
-                                            new URL(pagesPrefix + "/" + value + "/", siteurl()).toString()
+                                            new URL(pagesPrefix + "/" + value + "/", siteurl).toString()
                                         }>
                                         ID:{value.split(/(_|@)/).at(-1)}
                                     </a>

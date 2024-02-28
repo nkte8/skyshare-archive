@@ -27,7 +27,6 @@ import ForceIntentToggle from "./options/ForceIntentToggle"
 import PostButton from "./PostButton"
 import LanguageSelect from "./LanguageSelect"
 import Details from "./Details"
-import { siteurl } from "@/utils/envs";
 
 const MemoImgViewBox = memo(ImgViewBox)
 const Component = ({
@@ -43,6 +42,7 @@ const Component = ({
     setMode: Dispatch<SetStateAction<modes>>,
     setPopupContent: Dispatch<SetStateAction<popupContent>>,
 }) => {
+    const siteurl = location.origin
     // ImgFormにて格納されるimageとディスパッチャー
     const [imageFiles, setImageFile] = useState<Array<File>>([]);
     // ImgFormにて格納されるAltテキストのリスト
@@ -140,6 +140,7 @@ const Component = ({
                     // 外部リンクが添付されている場合はlinkcardを付与する
                     if ((!noGenerate && noImagesAttached) || noGenerate) {
                         record = await attachExternalToRecord({
+                            apiUrl: siteurl,
                             base: record,
                             session: sessionNecessary,
                             externalUrl: new URL(linkcardUrl),
@@ -186,7 +187,7 @@ const Component = ({
                     isError: false
                 })
                 const [id, rkey] = get_res.uri.split("/")
-                const ogpUrl = new URL(`${pagesPrefix}/${id}@${rkey}/`, siteurl())
+                const ogpUrl = new URL(`${pagesPrefix}/${id}@${rkey}/`, siteurl)
                 popupContent.url = ogpUrl
                 popupContent.content += `${popupContent.content !== "" ? ("\n") : ("")}${ogpUrl.toString()}`
             }

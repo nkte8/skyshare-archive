@@ -1,6 +1,6 @@
 import type { APIContext, APIRoute } from "astro";
 import type { ogpMataData, errorResponse } from "@/lib/types";
-import { siteurl } from "@/utils/envs";
+import { corsAllowOrigin } from "@/utils/envs";
 import validateRequestReturnURL from "@/lib/validateRequest"
 // SSRを有効化
 export const prerender = false;
@@ -46,7 +46,7 @@ const extractHead = (html: string): ogpMataData => {
 export const GET: APIRoute = async ({ request }: APIContext): Promise<Response> => {
     // 返却するするヘッダ
     const Headers = {
-        "Access-Control-Allow-Origin": siteurl(),
+        "Access-Control-Allow-Origin": corsAllowOrigin,
         "Access-Control-Allow-Methods": "GET,OPTIONS",
         "Content-Type": "application/json"
     }

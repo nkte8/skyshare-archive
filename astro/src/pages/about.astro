@@ -1,8 +1,9 @@
 ---
 import { servicename, serviceurl, authorlink } from "@/utils/vars";
-import { qaurl, siteurl } from "@/utils/envs";
+import { qaurl } from "@/utils/envs";
 import version from "@/utils/version";
 import Pagelayout from "@/layouts/Pagelayout.astro";
+const siteurl = Astro.url.origin
 
 const title = `About - ${servicename}`;
 const robots = ["index", "nofollow", "noarchive", "noimageindex"];
@@ -17,7 +18,7 @@ const robots = ["index", "nofollow", "noarchive", "noimageindex"];
 	<div class="mb-8">
 		<h1>当サイトについて</h1>
 		<h3>
-			{servicename}のWebサービス(<a href={siteurl()}>{serviceurl}</a
+			{servicename}のWebサービス(<a href={siteurl}>{serviceurl}</a
 			>)としての仕様および注意事項について記載します。
 		</h3>
 	</div>
@@ -126,7 +127,7 @@ const robots = ["index", "nofollow", "noarchive", "noimageindex"];
 	<div class="mb-8">
 		<h2>当サイトの運用方針に関して</h2>
 		<div>
-			当サイト（<a href={siteurl()}>{serviceurl}</a
+			当サイト（<a href={siteurl}>{serviceurl}</a
 			>）はあったらいいなを形にしたいという想い、AT
 			Protocolの開発事例・技術習得学習の一環としてのみ構築されています。
 			<b>広告等でのマネタイズを行う気は今後含めて一切ありません</b>。

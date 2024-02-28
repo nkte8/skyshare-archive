@@ -6,7 +6,6 @@ import { getOgpMeta } from "../../../utils/getOgp"
 import Tweetbox from "../common/Tweetbox"
 import { ogpMataData } from "@/lib/types"
 import { readShowTaittsuu } from "@/utils/localstorage"
-import { siteurl } from "@/utils/envs"
 
 export const Component = ({
     popupContent,
@@ -15,13 +14,15 @@ export const Component = ({
     popupContent: popupContent,
     setMsgInfo: Dispatch<SetStateAction<msgInfo>>
 }) => {
+    const siteurl = location.origin
+    
     const { profile } = useContext(Profile_context)
     const [ogpUrl, setOgpUrl] = useState<string | null>(null)
     const [ogpMeta, setOgpMeta] = useState<ogpMataData | null>(null)
     const previewOgp = async () => {
         if (popupContent.url !== null) {
             try {
-                const ogp = await getOgpMeta(siteurl(), popupContent.url.toString())
+                const ogp = await getOgpMeta(siteurl, popupContent.url.toString())
                 if (ogp.type === "error") {
                     let e: Error = new Error(ogp.message)
                     e.name = ogp.error

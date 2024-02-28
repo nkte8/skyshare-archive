@@ -1,11 +1,6 @@
 export const baseurl = import.meta.env.BASE_URL
-export const siteurl = () => {
-    const env = String(import.meta.env.PUBLIC_STAGING_SITE_URL)
-    if (typeof env !== "undefined" && env !== "") {
-        return env
-    }
-    return import.meta.env.SITE
-}
+const environmentFlag = Boolean(import.meta.env.PUBLIC_IS_NOT_PRODUCTION)
+export const corsAllowOrigin = (environmentFlag) ? "*" : import.meta.env.SITE
 export const posturl = baseurl + "app/"
 export const abouturl = baseurl + "about/"
 export const qaurl = baseurl + "qa/"

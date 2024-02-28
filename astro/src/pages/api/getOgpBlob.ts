@@ -1,7 +1,7 @@
 import type { APIContext, APIRoute } from "astro";
 import validateRequestReturnURL from "@/lib/validateRequest"
 import createErrResponse from "@/lib/createErrResponse";
-import { siteurl } from "@/utils/envs";
+import { corsAllowOrigin } from "@/utils/envs";
 // SSRを有効化
 export const prerender = false;
 
@@ -9,7 +9,7 @@ export const GET: APIRoute = async ({ request }: APIContext) => {
 
     // CORSの設定
     const corsHeaders = {
-        "Access-Control-Allow-Origin": siteurl(),
+        "Access-Control-Allow-Origin": corsAllowOrigin,
         "Access-Control-Allow-Methods": "GET,OPTIONS"
     }
     // APIの事前処理実施

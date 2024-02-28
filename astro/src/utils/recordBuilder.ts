@@ -7,7 +7,6 @@ import model_uploadBlob from "./atproto_api/models/uploadBlob.json";
 import model_error from "./atproto_api/models/error.json";
 import type { ogpMataData, errorResponse } from "@/lib/types";
 import { getOgpMeta, getOgpBlob } from "./getOgp"
-import { siteurl } from "./envs";
 
 export type SessionNecessary = {
     did: string,
@@ -39,11 +38,13 @@ export const buildRecordBase = async (props: RecordBase): Promise<RecordCore> =>
 }
 
 export const attachExternalToRecord = async ({
+    apiUrl,
     base,
     session,
     externalUrl,
     handleProcessing
 }: {
+    apiUrl: string,
     base: RecordBase,
     session: SessionNecessary,
     externalUrl: URL,
@@ -66,14 +67,14 @@ export const attachExternalToRecord = async ({
             msg: `${externalUrl.hostname}からOGPの取得中...`,
             isError: false
         })
-        ogpMeta = await getOgpMeta(siteurl(), externalUrl.toString())
+        ogpMeta = await getOgpMeta(apiUrl, externalUrl.toString())
         if (ogpMeta.type === "error") {
             let e: Error = new Error(ogpMeta.message)
             e.name = ogpMeta.error
             throw e
         }
         if (ogpMeta.image !== "") {
-            blob = await getOgpBlob(siteurl(), ogpMeta.image)
+            blob = await getOgpBlob(apiUrl, ogpMeta.image)
         }
         let embed: embed.external = {
             $type: "app.bsky.embed.external",

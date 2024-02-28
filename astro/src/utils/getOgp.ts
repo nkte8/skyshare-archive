@@ -7,7 +7,7 @@ export const getOgpMeta = async (
 ): Promise<ogpMataData | errorResponse> => {
     const apiUrl = new URL("/api/getOgpMeta", siteurl)
     apiUrl.searchParams.append("url", encodeURIComponent(externalUrl))
-    return fetch(apiUrl, {
+    return await fetch(apiUrl, {
         method: 'GET',
         headers: {
             'Content-Type': 'application/json'
@@ -19,9 +19,9 @@ export const getOgpMeta = async (
             e.name = res.error
             throw e
         }
-        return await response.json()
+        return await response.json() as ogpMataData
     }).catch((e: Error) => {
-        return {
+        return <errorResponse>{
             type: "error",
             error: `${e.name}@getOgpMeta`,
             message: e.message
@@ -35,7 +35,7 @@ export const getOgpBlob = async (
 ): Promise<Blob> => {
     const apiUrl = new URL("/api/getOgpBlob", siteurl)
     apiUrl.searchParams.append("url", encodeURIComponent(externalUrl))
-    return fetch(apiUrl, {
+    return await fetch(apiUrl, {
         method: 'GET'
     }).then(async (response) => {
         if (!response?.ok) {

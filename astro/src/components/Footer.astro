@@ -1,6 +1,7 @@
 ---
 import { servicename } from "@/utils/vars";
-import { siteurl, policyurl, abouturl } from "@/utils/envs";
+import { policyurl, abouturl } from "@/utils/envs";
+const siteurl = Astro.url.origin
 ---
 
 <div id="footer" class="text-center w-full mb-0">
@@ -12,7 +13,7 @@ import { siteurl, policyurl, abouturl } from "@/utils/envs";
             >
         </div>
         <div class="mb-0">
-            2024 © <a href={siteurl()}>{servicename}</a>
+            2024 © <a href={siteurl}>{servicename}</a>
         </div>
     </div>
 </div>
