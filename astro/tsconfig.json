@@ -17,5 +17,6 @@
     "jsx": "react-jsx",
     "jsxImportSource": "react",
     "verbatimModuleSyntax": false,
+    "noEmit": true,
   }
 }
