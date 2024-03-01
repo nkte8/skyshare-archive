@@ -1,45 +1,66 @@
 import type { APIContext, APIRoute } from "astro";
 import type { ogpMataData, errorResponse } from "@/lib/types";
 import { corsAllowOrigin } from "@/utils/envs";
-import validateRequestReturnURL from "@/lib/validateRequest"
+import validateRequestReturnURL from "@/lib/validateRequest";
+import { JSDOM } from "jsdom";
+
 // SSRを有効化
 export const prerender = false;
 
-// Cloudflare環境 ≠ Nodejsであるため、jsdomやhappy-domが使えなかった
-// 正規表現芸人をせざるをえない...
-const extractHead = (html: string): ogpMataData => {
-    let metas: Array<string> = []
+/**
+ * URLからOGP関連メタデータを抽出する
+ * @param url string
+ * @returns OGP関連メタデータ
+ */
+const extractHead = async (url: string): Promise<ogpMataData> => {
+    const dom: JSDOM = await JSDOM.fromURL(decodeURIComponent(url))
+        .then((res: JSDOM): JSDOM => res)
+        .catch((res: Error) => {
+            let e: Error = new Error(res.message);
+            e.name = res.name;
+            throw e;
+        });
 
-    const titleFilter: Array<RegExp> = [
-        /(?: *< *meta +name=["']?twitter:title["']? +content=)["']?([^"']*)["']?/,
-        /(?: *< *meta +property=["']?og:title["']? +content=)["']?([^"']*)["']?/,
-    ]
-    const descriptionFilter: Array<RegExp> = [
-        /(?: *< *meta +name=["']?twitter:description["']? +content=)["']?([^"']*)["']?/,
-        /(?: *< *meta +property=["']?og:description["']? +content=)["']?([^"']*)["']?/,
-    ]
-    const imageFilter: Array<RegExp> = [
-        /(?: *< *meta +name=["']?twitter:image["']? +content=)["']?([^"']*)["']?/,
-        /(?: *< *meta +property=["']?og:image["']? +content=)["']?([^"']*)["']?/
-    ]
-    // やるとしたらこの部分の効率化がしたい
-    // ただし、twitter:XXX系→og:XXX系の順序性は崩したくない
-    for (let filters of [titleFilter, descriptionFilter, imageFilter]) {
-        let result: string = ""
-        for (let filter of filters) {
-            const regResult = filter.exec(html)
-            if (regResult !== null) {
-                result = regResult[1]
-                break
-            }
-        }
-        metas.push(result)
+    const { document } = dom.window;
+
+    let title: string =
+        document
+            .querySelector("meta[name='twitter:title']")
+            ?.getAttribute("content") ?? "";
+    if (title === "") {
+        title =
+            document
+                .querySelector("meta[property='og:title']")
+                ?.getAttribute("content") ?? "";
+    }
+
+    let description: string =
+        document
+            .querySelector("meta[name='twitter:description']")
+            ?.getAttribute("content") ?? "";
+
+    if (description === "") {
+        description =
+            document
+                .querySelector("meta[property='og:description']")
+                ?.getAttribute("content") ?? "";
+    }
+
+    let image: string =
+        document
+            .querySelector("meta[name='twitter:image']")
+            ?.getAttribute("content") ?? "";
+    if (image === "") {
+        image =
+            document
+                .querySelector("meta[property='og:image']")
+                ?.getAttribute("content") ?? "";
     }
     return {
         type: "meta",
-        title: metas[0],
-        description: metas[1],
-        image: metas[2]
+        title: title,
+        description: description,
+        image: image
     }
 };
 
@@ -63,14 +84,7 @@ export const GET: APIRoute = async ({ request }: APIContext): Promise<Response> 
     const url = decodeURIComponent(validateResult)
 
     try {
-        const html = await fetch(
-            decodeURIComponent(url)
-        ).then((res) => res.text()).catch((res: Error) => {
-            let e: Error = new Error(res.message)
-            e.name = res.name
-            throw e
-        })
-        const meta: ogpMataData = extractHead(html);
+        const meta: ogpMataData = await extractHead(url);
         const response = new Response(
             JSON.stringify(meta),
             {
