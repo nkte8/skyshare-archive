@@ -1,5 +1,5 @@
 import type { APIContext, APIRoute } from "astro";
-import type { ogpMataData, errorResponse } from "@/lib/types";
+import type { ogpMetaData, errorResponse } from "@/lib/types";
 import { corsAllowOrigin } from "@/utils/envs";
 import validateRequestReturnURL from "@/lib/validateRequest"
 // SSRを有効化
@@ -7,7 +7,7 @@ export const prerender = false;
 
 // Cloudflare環境 ≠ Nodejsであるため、jsdomやhappy-domが使えなかった
 // 正規表現芸人をせざるをえない...
-const extractHead = (html: string): ogpMataData => {
+const extractHead = (html: string): ogpMetaData => {
     let metas: Array<string> = []
 
     const titleFilter: Array<RegExp> = [
@@ -65,7 +65,7 @@ const findEncoding = async (htmlBlob: Blob): Promise<string> => {
 
 export const GET: APIRoute = async ({ request }: APIContext): Promise<Response> => {
     // 返却するするヘッダ
-    const Headers = {
+    const headers = {
         "Access-Control-Allow-Origin": corsAllowOrigin,
         "Access-Control-Allow-Methods": "GET,OPTIONS",
         "Content-Type": "application/json"
@@ -74,32 +74,31 @@ export const GET: APIRoute = async ({ request }: APIContext): Promise<Response> 
     const validateResult = validateRequestReturnURL({ request })
 
     if (typeof validateResult !== "string") {
-        for (const [key, value] of Object.entries(Headers)) {
+        for (const [key, value] of Object.entries(headers)) {
             validateResult.headers.append(key, value)
         }
-        validateResult.headers.append("Content-Type", "application/json")
         return validateResult
     }
-    const url = decodeURIComponent(validateResult)
+
+    const url: string = decodeURIComponent(validateResult)
     const decodeAsText = async (arrayBuffer: Blob, encoding: string) => new TextDecoder(encoding).decode(await arrayBuffer.arrayBuffer());
 
     try {
-        const htmlBlob = await fetch(
-            decodeURIComponent(url)
+        const htmlBlob: Blob = await fetch(url
         ).then((res) => res.blob()).catch((res: Error) => {
             let e: Error = new Error(res.message)
             e.name = res.name
             throw e
         })
-        const encoding = await findEncoding(htmlBlob)
-        const html = await decodeAsText(htmlBlob, encoding)
+        const encoding: string = await findEncoding(htmlBlob)
+        const html: string = await decodeAsText(htmlBlob, encoding)
 
-        const meta: ogpMataData = extractHead(html);
+        const meta: ogpMetaData = extractHead(html);
         const response = new Response(
             JSON.stringify(meta),
             {
                 status: 200,
-                headers: Headers
+                headers: headers
             })
         return response
     } catch (error: unknown) {
@@ -114,7 +113,7 @@ export const GET: APIRoute = async ({ request }: APIContext): Promise<Response> 
             message: msg
         }), {
             status: 500,
-            headers: Headers
+            headers: headers
         })
     }
 };

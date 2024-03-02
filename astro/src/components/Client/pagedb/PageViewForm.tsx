@@ -6,14 +6,13 @@ import { load_circle, link } from "../common/tailwind_variants"
 import ProfileCard from "../bsky/ProfileCard"
 import { type msgInfo } from "../common/types"
 
-const siteurl = location.origin
 const Component = ({
     setMsgInfo
 }: {
     setMsgInfo: Dispatch<SetStateAction<msgInfo>>,
 }) => {
+    const siteurl = location.origin
     const { session } = useContext(Session_context)
-
     const error: ReactNode = (
         <>
             <div>Failed to load Pages</div>
