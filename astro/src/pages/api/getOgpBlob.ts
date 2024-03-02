@@ -13,7 +13,7 @@ export const GET: APIRoute = async ({ request }: APIContext) => {
         "Access-Control-Allow-Methods": "GET,OPTIONS"
     }
     // APIの事前処理実施
-    const validateResult = validateRequestReturnURL({ request })
+    const validateResult: string | Response = validateRequestReturnURL({ request })
 
     if (typeof validateResult !== "string") {
         for (const [key, value] of Object.entries(corsHeaders)) {
@@ -24,15 +24,15 @@ export const GET: APIRoute = async ({ request }: APIContext) => {
     }
     const url = decodeURIComponent(validateResult)
     try {
-        const blob = await fetch(url).then((res) => res.blob());
-        const res = new Response(blob, {
+        const blob: Blob = await fetch(url).then((res) => res.blob());
+        const response: Response = new Response(blob, {
             status: 200,
             headers: corsHeaders
         });
-        res.headers.append("Content-Type", blob.type)
-        return res;
+        response.headers.append("Content-Type", blob.type)
+        return response;
     } catch (error: unknown) {
-        const result = createErrResponse({
+        const result: Response = createErrResponse({
             statusCode: 500
         })
         for (const [key, value] of Object.entries(corsHeaders)) {

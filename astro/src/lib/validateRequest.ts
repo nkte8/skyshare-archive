@@ -4,7 +4,7 @@ const validateRequestReturnURL = ({
     request
 }: {
     request: Request
-}) => {
+}): string | Response => {
     if (request.method === "OPTIONS") {
         return new Response(null, {
             status: 204,
@@ -24,7 +24,7 @@ const validateRequestReturnURL = ({
         })
     }
     // SSRF対策
-    if (url.toLowerCase().search(/(http|https):\/\/localhost/) > 0) {
+    if (url.toLowerCase().search(/(localhost|127.0.0.1|[::1]|192.168).*/) > 0) {
         return createErrResponse({
             statusCode: 502
         })

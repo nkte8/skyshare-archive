@@ -1,5 +1,5 @@
 import type { APIContext, APIRoute } from "astro";
-import type { ogpMataData, errorResponse } from "@/lib/types";
+import type { ogpMetaData, errorResponse } from "@/lib/types";
 import { corsAllowOrigin } from "@/utils/envs";
 import validateRequestReturnURL from "@/lib/validateRequest"
 // SSRを有効化
@@ -7,7 +7,7 @@ export const prerender = false;
 
 // Cloudflare環境 ≠ Nodejsであるため、jsdomやhappy-domが使えなかった
 // 正規表現芸人をせざるをえない...
-const extractHead = (html: string): ogpMataData => {
+const extractHead = (html: string): ogpMetaData => {
     let metas: Array<string> = []
 
     const titleFilter: Array<RegExp> = [
@@ -45,7 +45,7 @@ const extractHead = (html: string): ogpMataData => {
 
 export const GET: APIRoute = async ({ request }: APIContext): Promise<Response> => {
     // 返却するするヘッダ
-    const Headers = {
+    const headers = {
         "Access-Control-Allow-Origin": corsAllowOrigin,
         "Access-Control-Allow-Methods": "GET,OPTIONS",
         "Content-Type": "application/json"
@@ -54,28 +54,26 @@ export const GET: APIRoute = async ({ request }: APIContext): Promise<Response> 
     const validateResult = validateRequestReturnURL({ request })
 
     if (typeof validateResult !== "string") {
-        for (const [key, value] of Object.entries(Headers)) {
+        for (const [key, value] of Object.entries(headers)) {
             validateResult.headers.append(key, value)
         }
-        validateResult.headers.append("Content-Type", "application/json")
         return validateResult
     }
-    const url = decodeURIComponent(validateResult)
+    const url: string = decodeURIComponent(validateResult)
 
     try {
-        const html = await fetch(
-            decodeURIComponent(url)
+        const html = await fetch(url
         ).then((res) => res.text()).catch((res: Error) => {
             let e: Error = new Error(res.message)
             e.name = res.name
             throw e
         })
-        const meta: ogpMataData = extractHead(html);
+        const meta: ogpMetaData = extractHead(html);
         const response = new Response(
             JSON.stringify(meta),
             {
                 status: 200,
-                headers: Headers
+                headers: headers
             })
         return response
     } catch (error: unknown) {
@@ -90,7 +88,7 @@ export const GET: APIRoute = async ({ request }: APIContext): Promise<Response> 
             message: msg
         }), {
             status: 500,
-            headers: Headers
+            headers: headers
         })
     }
 };

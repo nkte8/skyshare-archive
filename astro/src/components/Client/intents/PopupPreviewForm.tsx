@@ -2,9 +2,9 @@ import { Fragment, Dispatch, SetStateAction, useContext, useEffect, useState } f
 import { type popupContent, type msgInfo } from "../common/types"
 import { Profile_context } from "../common/contexts"
 import ShareButton from "./ShareButton"
-import { getOgpMeta } from "../../../utils/getOgp"
+import { getOgpMeta } from "@/utils/getOgp"
 import Tweetbox from "../common/Tweetbox"
-import { ogpMataData } from "@/lib/types"
+import { ogpMetaData } from "@/lib/types"
 import { readShowTaittsuu } from "@/utils/localstorage"
 
 export const Component = ({
@@ -18,7 +18,7 @@ export const Component = ({
     
     const { profile } = useContext(Profile_context)
     const [ogpUrl, setOgpUrl] = useState<string | null>(null)
-    const [ogpMeta, setOgpMeta] = useState<ogpMataData | null>(null)
+    const [ogpMeta, setOgpMeta] = useState<ogpMetaData | null>(null)
     const previewOgp = async () => {
         if (popupContent.url !== null) {
             try {

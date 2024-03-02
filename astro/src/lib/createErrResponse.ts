@@ -47,7 +47,7 @@ const createErrResponse = ({
             response = new Response(
                 JSON.stringify(<errorResponse>{
                     error: "Unexpected Error",
-                    message: "Unexpected Error occurd at getOgpMeta."
+                    message: "Unexpected Error occured."
                 }), {
                 status: statusCode
             })

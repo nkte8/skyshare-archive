@@ -1,4 +1,4 @@
-export type ogpMataData = {
+export type ogpMetaData = {
     type: "meta"
     title: string,
     description: string,
