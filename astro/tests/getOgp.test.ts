@@ -18,7 +18,7 @@ describe('getOgp Test', () => {
         )
     }, 10000) // long timeouf)
     // YoutubeはCORSが設定されている例
-    test('True Website youtube test', async () => {
+    test('True Website cors site test', async () => {
         let result: ogpMataData | errorResponse = await getOgpMeta(siteurl, "https://www.youtube.com/watch?v=xitQ_oNTVvE")
         expect(result).toEqual(
             <ogpMataData>{
@@ -30,7 +30,7 @@ describe('getOgp Test', () => {
         )
     }, 100000) // long timeouf)
     // Zennは　twitter:imageが設定されていない例
-    test('True Website nicopedia test', async () => {
+    test('True Website no twitter:image test', async () => {
         let result: ogpMataData | errorResponse = await getOgpMeta(siteurl, "https://zenn.dev")
         expect(result).toEqual(
             <ogpMataData>{
@@ -41,4 +41,17 @@ describe('getOgp Test', () => {
             }
         )
     }, 100000) // long timeouf)
+    // It media はエンコーディングが古い shift-jisのサイト
+    test('True Website shift-jis site test', async () => {
+        let result: ogpMataData | errorResponse = await getOgpMeta(siteurl, "https://www.itmedia.co.jp/news/")
+        expect(result).toEqual(
+            <ogpMataData>{
+                type: "meta",
+                title: "ITmedia NEWS",
+                description: "ITがもたらす変化を敏感に感じ取り、仕事や生活に生かしていこうという企業内個人やネットサービス開発者、ベンチャー経営者をコアターゲットに、IT業界動向やネットサービストレンド、ネット上の話題までカバーするニュースを配信します。",
+                image: `https://image.itmedia.co.jp/images/logo/1200x630_500x500_news.gif`
+            }
+        )
+    }, 100000) // long timeouf)
+
 })

@@ -43,6 +43,26 @@ const extractHead = (html: string): ogpMataData => {
     }
 };
 
+const findEncoding = async (htmlBlob: Blob): Promise<string> => {
+    const text = await htmlBlob.text()
+    const headerRegExp: Array<RegExp> = [
+        /(?: *< *meta +charset=["']?)([^"']*)["']?/i,
+        /(?: *< *meta +http-equiv=["']?content-type["']? +content=["']?[^"']*charset=)([^"']*)["']?/i,
+    ]
+    let charset: string | undefined
+    for (let filter of headerRegExp) {
+        if (charset === undefined) {
+            const regResult = filter.exec(text)
+            if (regResult !== null) {
+                charset = regResult[1]
+            }
+        }
+    }
+    console.log(charset)
+    charset = (typeof charset !== "undefined") ? charset.toLowerCase() : "utf-8" // default
+    return charset
+}
+
 export const GET: APIRoute = async ({ request }: APIContext): Promise<Response> => {
     // 返却するするヘッダ
     const Headers = {
@@ -61,15 +81,19 @@ export const GET: APIRoute = async ({ request }: APIContext): Promise<Response> 
         return validateResult
     }
     const url = decodeURIComponent(validateResult)
+    const decodeAsText = async (arrayBuffer: Blob, encoding: string) => new TextDecoder(encoding).decode(await arrayBuffer.arrayBuffer());
 
     try {
-        const html = await fetch(
+        const htmlBlob = await fetch(
             decodeURIComponent(url)
-        ).then((res) => res.text()).catch((res: Error) => {
+        ).then((res) => res.blob()).catch((res: Error) => {
             let e: Error = new Error(res.message)
             e.name = res.name
             throw e
         })
+        const encoding = await findEncoding(htmlBlob)
+        const html = await decodeAsText(htmlBlob, encoding)
+
         const meta: ogpMataData = extractHead(html);
         const response = new Response(
             JSON.stringify(meta),
