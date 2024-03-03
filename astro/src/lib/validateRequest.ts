@@ -24,11 +24,11 @@ const validateRequestReturnURL = ({
         })
     }
     // SSRF対策
-    if (url.toLowerCase().search(/(localhost|127.0.0.1|[::1]|192.168).*/) > 0) {
-        return createErrResponse({
-            statusCode: 502
-        })
-    }
+    // if (url.toLowerCase().search(/localhost/) > 0) {
+    //     return createErrResponse({
+    //         statusCode: 502
+    //     })
+    // }
     return url
 }
 export default validateRequestReturnURL
