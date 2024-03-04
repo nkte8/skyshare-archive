@@ -1,6 +1,7 @@
 import { memo, useState, useContext, Dispatch, SetStateAction } from "react"
 import { Session_context } from "../common/contexts"
 import { type msgInfo, type modes, type popupContent } from "../common/types"
+import { servicename } from "@/utils/vars";
 
 import {
     buildRecordBase,
@@ -11,6 +12,8 @@ import {
 
 import createRecord from "@/utils/atproto_api/createRecord";
 import createPage from "@/utils/backend_api/createPage";
+import { label } from "@/utils/atproto_api/labels";
+import { setSavedTags, readSavedTags } from "@/utils/localstorage";
 
 import { link } from "../common/tailwind_variants";
 
@@ -24,9 +27,12 @@ import AutoXPopupToggle from "./options/AutoXPopupToggle"
 import NoGenerateToggle from "./options/NoGenerateToggle"
 import ShowTaittsuuToggle from "./options/ShowTaittsuuToggle"
 import ForceIntentToggle from "./options/ForceIntentToggle"
+import AppendVia from "./options/AppendViaToggle"
 import PostButton from "./PostButton"
 import LanguageSelect from "./LanguageSelect"
 import Details from "./Details"
+import TagInputList from "./TagInputList"
+import SelfLabelsSelector from "./SelfLabelsSelect"
 
 const MemoImgViewBox = memo(ImgViewBox)
 const Component = ({
@@ -61,6 +67,8 @@ const Component = ({
     const countMax = 300
     // PostのWarining上限
     const countWarn = 140
+    // 保存できるタグの上限
+    const maxTagCount = 8
     // Options
     // ポスト時に自動でXを開く
     const [autoPop, setAutoPop] = useState<boolean>(false)
@@ -70,15 +78,17 @@ const Component = ({
     const [noUseXApp, setNoUseXApp] = useState<boolean>(false)
     // タイッツーボタンを表示する
     const [showTaittsuu, setShowTaittsuu] = useState<boolean>(false)
-
-
-    const initializePost = () => {
-        setPostProcessing(true)
-        setProcessing(true)
-        // Postを押したら強制的にフォーカスアウトイベントを発火
-    }
+    // メディアに対してラベル付与を行う
+    const [selfLabel, setSelfLabel] = useState<label.value | null>(null)
+    // viaを付与する
+    const [appendVia, setAppendVia] = useState<boolean>(false)
 
     const handlePost = async () => {
+        const initializePost = () => {
+            setPostProcessing(true)
+            setProcessing(true)
+            // Postを押したら強制的にフォーカスアウトイベントを発火
+        }
         initializePost()
         setMsgInfo({
             msg: "レコードに変換中...",
@@ -89,8 +99,33 @@ const Component = ({
                 text: post,
                 createdAt: new Date(),
                 langs: language,
-                $type: "app.bsky.feed.post"
+                $type: "app.bsky.feed.post",
+                labels: (selfLabel !== null) ? {
+                    $type: "com.atproto.label.defs#selfLabels",
+                    values: [selfLabel]
+                } : undefined,
+                via: (appendVia !== false) ? servicename : undefined
             })
+            // Hashtagが含まれている場合はブラウザに保存
+            const savedTag = readSavedTags()
+            let taglist: string[] = (savedTag !== null) ? savedTag : []
+            record.facets?.forEach((value) => {
+                const facet = value.features[0]
+                if (facet.$type === "app.bsky.richtext.facet#tag") {
+                    const tagName = `#${facet.tag}`
+                    const tagIndex = taglist.indexOf(tagName)
+                    if (tagIndex < 0) {
+                        // タグが存在しない場合は先頭に追加
+                        taglist.unshift(tagName)
+                    } else {
+                        // タグが存在する場合は先頭に移動
+                        taglist.splice(tagIndex, 1)
+                        taglist.unshift(tagName)
+                    }
+                }
+            })
+            setSavedTags(taglist.slice(0, maxTagCount))
+
             let popupContent: popupContent = {
                 url: null,
                 content: post
@@ -239,17 +274,23 @@ const Component = ({
                         onClick={handlerCancel}
                         className={link({
                             enabled: (post.length >= 1 || imageFiles.length > 0),
-                            class: "inline-block mx-2"
+                            class: ["inline-block", "mx-2", "flex-none"]
                         })}
                         disabled={!(post.length >= 1 || imageFiles.length > 0)}>
                         下書きを消す
                     </button>
-                    <div className="flex-1 my-0"></div>
-                    <PostButton
-                        handlePost={handlePost}
-                        isProcessing={processing}
-                        isPostProcessing={isPostProcessing}
-                        disabled={!(post.length >= 1 || imageFiles.length > 0)} />
+                    <div className="flex-1"></div>
+                    <SelfLabelsSelector
+                        disabled={processing}
+                        setSelfLabel={setSelfLabel}
+                        selectedLabel={selfLabel} />
+                    <div className="flex-none my-auto">
+                        <PostButton
+                            handlePost={handlePost}
+                            isProcessing={processing}
+                            isPostProcessing={isPostProcessing}
+                            disabled={!(post.length >= 1 || imageFiles.length > 0)} />
+                    </div>
                 </div>
                 <TextForm
                     post={post}
@@ -262,13 +303,12 @@ const Component = ({
                         setImageFile={setImageFile}
                         className="py-0"
                     />
-
                     <div className="flex-1 my-auto"></div>
                     <LanguageSelect
                         disabled={isPostProcessing}
                         setLanguage={setLanguage} />
                     <div className={
-                        `align-middle my-auto mr-1 px-2 rounded-lg ${(
+                        `align-middle my-auto mr-1 px-2 flex-none w-20 rounded-lg ${(
                             count > countMax
                         ) && "bg-red-300"
                         } ${(
@@ -277,36 +317,50 @@ const Component = ({
                         }`}>
                         {count}/{countMax}
                     </div>
-
                 </div>
-
-                <div className="flex flex-wrap mb-4">
-                    <AutoXPopupToggle
-                        labeltext={"Xを自動で開く"}
-                        prop={autoPop}
-                        setProp={setAutoPop} />
-                    <NoGenerateToggle
-                        labeltext={"Xへの画像は自身で添付する"}
-                        prop={noGenerate}
-                        setProp={setNoGenerate} />
-                </div>
-                <Details initHidden={!showTaittsuu}>
-                    <div className="flex flex-wrap">
-                        <ShowTaittsuuToggle
-                            labeltext={"タイッツーの投稿ボタンも表示する"}
-                            prop={showTaittsuu}
-                            setProp={setShowTaittsuu} />
-                        <ForceIntentToggle
-                            labeltext={"Xの投稿はアプリを強制的に起動する"}
-                            prop={noUseXApp}
-                            setProp={setNoUseXApp} />
+                <div className="mx-2 my-auto">
+                    <div className="flex w-full">
+                        <div className="flex-none my-auto">よく使うタグ: </div>
+                        <TagInputList
+                            post={post}
+                            setPost={setPost}
+                            disabled={processing} />
                     </div>
-                </Details>
+
+                    <div className="flex flex-wrap mb-4">
+                        <AutoXPopupToggle
+                            labeltext={"Xを自動で開く"}
+                            prop={autoPop}
+                            setProp={setAutoPop} />
+                        <NoGenerateToggle
+                            labeltext={"Xへの画像は自身で添付する"}
+                            prop={noGenerate}
+                            setProp={setNoGenerate} />
+                    </div>
+                </div>
                 <MemoImgViewBox
                     imageFiles={imageFiles}
                     setImageFile={setImageFile}
                     altTexts={altTexts}
                     setAltText={setAltText} />
+                <div className="mx-2 my-auto">
+                    <Details initHidden={!(showTaittsuu || noUseXApp || appendVia)}>
+                        <div className="flex flex-wrap">
+                            <ShowTaittsuuToggle
+                                labeltext={"タイッツーの投稿ボタンも表示する"}
+                                prop={showTaittsuu}
+                                setProp={setShowTaittsuu} />
+                            <ForceIntentToggle
+                                labeltext={"Xの投稿はアプリを強制的に起動する"}
+                                prop={noUseXApp}
+                                setProp={setNoUseXApp} />
+                            <AppendVia
+                                labeltext={"Viaを付与する"}
+                                prop={appendVia}
+                                setProp={setAppendVia} />
+                        </div>
+                    </Details>
+                </div>
             </Tweetbox>
         </>
     );

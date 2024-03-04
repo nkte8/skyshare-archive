@@ -5,8 +5,10 @@ import embed from "./atproto_api/embeds"
 import uploadBlob from "./atproto_api/uploadBlob";
 import model_uploadBlob from "./atproto_api/models/uploadBlob.json";
 import model_error from "./atproto_api/models/error.json";
+
 import type { ogpMetaData, errorResponse } from "@/lib/types";
 import { getOgpMeta, getOgpBlob } from "./getOgp"
+import { labels } from "./atproto_api/labels";
 
 export type SessionNecessary = {
     did: string,
@@ -17,11 +19,13 @@ type RecordBase = {
     text: string,
     createdAt: Date,
     $type: "app.bsky.feed.post",
-    langs: Array<string>
+    langs: Array<string>,
+    labels?: labels,
+    via?: string
 }
 // 付与できる情報を定義
 type RecordCore = {
-    facets?: Array<facet.link | facet.mention>
+    facets?: Array<facet.link | facet.mention | facet.hashtag>
     embed?: embed.images | embed.external
 } & RecordBase
 

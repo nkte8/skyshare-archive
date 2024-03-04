@@ -1,17 +1,18 @@
 import { Dispatch, SetStateAction } from "react";
+import SelectList from "../common/SelectList"
 const langList = [
     {
         label: "日本語",
-        code: "ja"
+        code: ["ja"]
     }, {
         label: "English",
-        code: "en"
+        code: ["en"]
     }, {
         label: "中文",
-        code: "zh"
+        code: ["zh"]
     }, {
         label: "한국어",
-        code: "ko"
+        code: ["ko"]
     }];
 export const Component = ({
     disabled,
@@ -20,28 +21,12 @@ export const Component = ({
     disabled: boolean,
     setLanguage: Dispatch<SetStateAction<Array<string>>>,
 }) => {
-    const handleSelect = (event: React.ChangeEvent<HTMLSelectElement>) => {
-        let value: Array<string> = []
-        const item = langList.find((opt) => opt.label === event.target.value)
-        if (typeof item !== "undefined") {
-            value = [item.code]
-        }
-        setLanguage(value)
-    }
     return (
         <>
-            <select
-                onChange={handleSelect}
-                disabled={disabled}
-                className="text-sm h-6 my-auto">
-                {langList.map((value) => {
-                    return (
-                        <option key={value.code}>
-                            {value.label}
-                        </option>
-                    )
-                })}
-            </select>
+            <SelectList 
+                setCode={setLanguage}
+                codeMap={langList}
+                disabled={disabled}/>
         </>
     )
 }
