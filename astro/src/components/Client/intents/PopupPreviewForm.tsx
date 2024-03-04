@@ -76,12 +76,16 @@ export const Component = ({
                     {popupContent.url !== null &&
                         <>
                             {
-                                ogpUrl !== null && (
+                                ogpUrl !== null && ogpUrl !== "" ? (
                                     <img src={ogpUrl} className="w-full rounded-3xl aspect-video object-cover border-2" />
+                                ) : (
+                                    <div className="w-full rounded-3xl py-10 object-cover border-2 text-gray-300">
+                                        No OGP image found at {popupContent.url.host.toString()}
+                                    </div>
                                 )
                             }
                             {
-                                ogpMeta !== null && (
+                                ogpMeta !== null && ogpMeta.title !== "" && (
                                     <div className="absolute bottom-2 left-4 bg-opacity-70 rounded-md px-2 text-white bg-black">
                                         {ogpMeta.title}
                                     </div>
