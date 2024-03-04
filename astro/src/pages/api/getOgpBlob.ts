@@ -15,6 +15,7 @@ export const GET: APIRoute = async ({ request }: APIContext) => {
     // APIの事前処理実施
     const validateResult: string | Response = validateRequestReturnURL({ request })
 
+    // エラーの場合はエラーレスポンスを返却
     if (typeof validateResult !== "string") {
         for (const [key, value] of Object.entries(corsHeaders)) {
             validateResult.headers.append(key, value)
@@ -22,7 +23,9 @@ export const GET: APIRoute = async ({ request }: APIContext) => {
         validateResult.headers.append("Content-Type", "application/json")
         return validateResult
     }
-    const url = decodeURIComponent(validateResult)
+
+    // 正常な場合はURLとして扱う
+    const url: string = validateResult
     try {
         const blob: Blob = await fetch(url).then((res) => res.blob());
         const response: Response = new Response(blob, {

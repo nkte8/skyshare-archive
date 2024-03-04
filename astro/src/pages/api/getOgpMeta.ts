@@ -73,6 +73,7 @@ export const GET: APIRoute = async ({ request }: APIContext): Promise<Response> 
     // APIの事前処理実施
     const validateResult = validateRequestReturnURL({ request })
 
+    // エラーの場合はエラーレスポンスを返却
     if (typeof validateResult !== "string") {
         for (const [key, value] of Object.entries(headers)) {
             validateResult.headers.append(key, value)
@@ -80,7 +81,8 @@ export const GET: APIRoute = async ({ request }: APIContext): Promise<Response> 
         return validateResult
     }
 
-    const url: string = decodeURIComponent(validateResult)
+    // 正常な場合はURLとして扱う
+    const url: string = validateResult
     const decodeAsText = async (arrayBuffer: Blob, encoding: string) => new TextDecoder(encoding).decode(await arrayBuffer.arrayBuffer());
 
     try {
