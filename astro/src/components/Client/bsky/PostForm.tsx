@@ -51,6 +51,10 @@ const Component = ({
     setPopupContent: Dispatch<SetStateAction<popupContent>>,
 }) => {
     const siteurl = location.origin
+
+    /** Apple製品利用者の可能性がある場合True */
+    const isAssumedAsAppleProdUser = navigator.userAgent.toLowerCase().includes("mac os x")
+
     // ImgFormにて格納されるimageとディスパッチャー
     const [imageFiles, setImageFile] = useState<Array<File>>([]);
     // ImgFormにて格納されるAltテキストのリスト
@@ -274,11 +278,18 @@ const Component = ({
 
     /**
      * Ctrl+Enterが押されたかどうかを判定します
-     * @param event イベント
+     * @param e キーボードイベント
      * @returns Ctrl+Enterが押された場合true
      */
-    const isCtrlEnterPressed: KeyPredicate = (event) =>
-        event.ctrlKey === true && event.key === "Enter"
+    const isCtrlEnterPressed: KeyPredicate = (e) => {
+        if (e.key === "Enter") {
+            if (isAssumedAsAppleProdUser) {
+                return e.metaKey === true
+            }
+            return e.ctrlKey === true
+        }
+        return false
+    }
 
     // Ctrl+Enterが押された場合に投稿する
     useKey(isCtrlEnterPressed, () => {
@@ -286,7 +297,7 @@ const Component = ({
             const msg: string =
                 e instanceof Error
                     ? `${e.name}: ${e.message}`
-                    : "Unexpected Error"
+                    : "Unexpected Error@PostForm.tsx"
             setMsgInfo({
                 msg: msg,
                 isError: true,
