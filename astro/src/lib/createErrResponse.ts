@@ -38,6 +38,7 @@ const createErrResponse = ({
             }
     }
     response.status = statusCode
+    response.type = "error"
     return response
 }
 export default createErrResponse

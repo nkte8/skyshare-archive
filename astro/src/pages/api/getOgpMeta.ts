@@ -102,7 +102,6 @@ export const GET: APIRoute = async ({ request }: APIContext): Promise<Response> 
     // 正常な場合はURLとして扱う
     const url: string = validateResult.decodedUrl
     const decodeAsText = async (arrayBuffer: Blob, encoding: string) => new TextDecoder(encoding).decode(await arrayBuffer.arrayBuffer());
-
     try {
         const htmlBlob: Blob = await fetch(url, {
             method: 'GET',

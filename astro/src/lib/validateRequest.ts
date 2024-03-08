@@ -36,7 +36,6 @@ const validateRequestReturnURL = ({
             statusCode: 406,
         })
     }
-
     const decodedUrl = decodeURIComponent(url)
     // SSRF対策
     // Productionではない環境についてはlocalhostの実行を許可
@@ -59,7 +58,7 @@ const validateRequestReturnURL = ({
 
     return <apiRequest>{
         type: "api",
-        decodedUrl: url,
+        decodedUrl: decodedUrl,
         language: lang
     }
 }
